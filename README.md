@@ -52,6 +52,18 @@ simple-portfolio/
 └── Preview/                         # Mock data & preview helpers
 ```
 
+## AI-Assisted Development
+
+This project includes [Claude Code](https://docs.anthropic.com/en/docs/claude-code) configuration for AI-assisted development.
+
+| Resource | Purpose |
+|----------|---------|
+| `CLAUDE.md` | Project rules, architecture reference, and coding conventions |
+| `alchemy-api` skill | Alchemy endpoint specs, Codable model templates, service patterns |
+| `swiftui-dev` skill | Design system tokens, view/VM templates, component patterns |
+| `/build` command | Build the project and report results |
+| `/review-conventions` command | Run an 11-point convention audit against project rules |
+
 ## Known Limitations
 
 - **No pagination** — Token balances and NFT collections are fetched in a single request. Wallets with a large number of tokens or NFT collections may return incomplete results.
