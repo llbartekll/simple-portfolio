@@ -20,5 +20,5 @@ func withRetry<T>(
         }
     }
 
-    throw lastError!
+    throw lastError ?? PortfolioError.requestFailed
 }
