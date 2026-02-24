@@ -4,8 +4,8 @@ struct PortfolioView: View {
     @State private var viewModel: PortfolioViewModel
     var onSelectToken: (Token) -> Void
 
-    init(address: String, service: PortfolioServiceProtocol, onSelectToken: @escaping (Token) -> Void) {
-        _viewModel = State(initialValue: PortfolioViewModel(address: address, service: service))
+    init(address: String, service: PortfolioServiceProtocol, priceService: PriceServiceProtocol, onSelectToken: @escaping (Token) -> Void) {
+        _viewModel = State(initialValue: PortfolioViewModel(address: address, service: service, priceService: priceService))
         self.onSelectToken = onSelectToken
     }
 
@@ -38,6 +38,9 @@ struct PortfolioView: View {
         .refreshable {
             await viewModel.load()
         }
+        .onDisappear {
+            viewModel.stopPriceUpdates()
+        }
     }
 
     @ViewBuilder
@@ -50,7 +53,7 @@ struct PortfolioView: View {
                             Button {
                                 onSelectToken(token)
                             } label: {
-                                TokenRowView(token: token)
+                                TokenRowView(token: token, price: viewModel.prices[token.id])
                             }
                             .buttonStyle(.plain)
                         }
@@ -87,7 +90,8 @@ struct PortfolioView: View {
     NavigationStack {
         PortfolioView(
             address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-            service: MockPortfolioService()
+            service: MockPortfolioService(),
+            priceService: MockPriceService()
         ) { token in
             print("Selected: \(token.name)")
         }

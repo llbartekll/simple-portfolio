@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct simple_portfolioApp: App {
     private let service: PortfolioServiceProtocol?
+    private let priceService: PriceServiceProtocol = WebSocketPriceService()
 
     private var isTesting: Bool {
         NSClassFromString("XCTestCase") != nil
@@ -22,7 +23,7 @@ struct simple_portfolioApp: App {
             if isTesting {
                 EmptyView()
             } else if let service {
-                ContentView(service: service)
+                ContentView(service: service, priceService: priceService)
             } else {
                 ErrorStateView(
                     message: PortfolioError.invalidAPIKey.localizedDescription,

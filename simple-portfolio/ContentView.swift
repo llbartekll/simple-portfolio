@@ -8,6 +8,7 @@ enum Route: Hashable {
 struct ContentView: View {
     @State private var path = NavigationPath()
     let service: PortfolioServiceProtocol
+    let priceService: PriceServiceProtocol
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -17,7 +18,7 @@ struct ContentView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .portfolio(let address):
-                    PortfolioView(address: address, service: service) { token in
+                    PortfolioView(address: address, service: service, priceService: priceService) { token in
                         path.append(Route.tokenDetail(token))
                     }
                 case .tokenDetail(let token):
@@ -30,5 +31,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(service: MockPortfolioService())
+    ContentView(service: MockPortfolioService(), priceService: MockPriceService())
 }
