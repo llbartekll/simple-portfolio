@@ -17,7 +17,7 @@ struct WalletInputView: View {
                     .font(.largeTitle.bold())
                     .foregroundStyle(Color.pfTextPrimary)
 
-                Text("Enter an Ethereum wallet address to view its portfolio")
+                Text("Enter an Ethereum or Solana wallet address to view its portfolio")
                     .font(.body)
                     .foregroundStyle(Color.pfTextTertiary)
                     .multilineTextAlignment(.center)
@@ -25,12 +25,12 @@ struct WalletInputView: View {
 
             VStack(spacing: PFSpacing.md.rawValue) {
                 HStack(spacing: PFSpacing.sm.rawValue) {
-                    TextField("0x...", text: $viewModel.address)
+                    TextField("0x... or Solana address", text: $viewModel.address)
                         .font(.body.monospaced())
                         .foregroundStyle(Color.pfTextPrimary)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
-                        .accessibilityLabel("Ethereum wallet address")
+                        .accessibilityLabel("Wallet address")
                         .onChange(of: viewModel.address) {
                             viewModel.validate()
                         }

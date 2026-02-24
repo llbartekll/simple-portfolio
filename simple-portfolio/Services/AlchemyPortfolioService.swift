@@ -19,8 +19,9 @@ final class AlchemyPortfolioService: PortfolioServiceProtocol {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
+        let networks = isSolanaAddress(address) ? ["solana-mainnet"] : ["eth-mainnet"]
         let body = TokenBalancesRequest(
-            addresses: [.init(address: address, networks: ["eth-mainnet"])],
+            addresses: [.init(address: address, networks: networks)],
             withMetadata: true,
             withPrices: false,
             includeNativeTokens: true,
@@ -47,6 +48,8 @@ final class AlchemyPortfolioService: PortfolioServiceProtocol {
     // MARK: - NFT Collections
 
     func fetchNFTCollections(address: String) async throws -> [NFTCollection] {
+        if isSolanaAddress(address) { return [] }
+
         var components = URLComponents(string: "https://eth-mainnet.g.alchemy.com/nft/v3/\(apiKey)/getContractsForOwner")
         components?.queryItems = [
             URLQueryItem(name: "owner", value: address),
@@ -98,6 +101,14 @@ final class AlchemyPortfolioService: PortfolioServiceProtocol {
         guard (200...299).contains(http.statusCode) else {
             throw PortfolioError.requestFailed
         }
+    }
+
+    private static let base58Chars = CharacterSet(charactersIn: "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+
+    private func isSolanaAddress(_ address: String) -> Bool {
+        (32...44).contains(address.count)
+            && !address.hasPrefix("0x")
+            && address.unicodeScalars.allSatisfy { Self.base58Chars.contains($0) }
     }
 
     private func isZeroBalance(_ value: String) -> Bool {

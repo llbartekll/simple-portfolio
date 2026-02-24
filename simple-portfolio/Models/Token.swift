@@ -11,7 +11,9 @@ struct Token: Identifiable, Hashable, Sendable {
     let logoURL: URL?
 
     var formattedBalance: String {
-        let balance = Self.hexToBalance(rawBalance, decimals: decimals)
+        let balance = rawBalance.hasPrefix("0x")
+            ? Self.hexToBalance(rawBalance, decimals: decimals)
+            : Self.decimalStringToBalance(rawBalance, decimals: decimals)
         if balance == 0 { return "0" }
         if balance < 0.0001 { return "<0.0001" }
         if balance >= 1_000_000 {
@@ -26,7 +28,6 @@ struct Token: Identifiable, Hashable, Sendable {
     private static func hexToBalance(_ hex: String, decimals: Int) -> Double {
         let cleaned = hex.hasPrefix("0x") ? String(hex.dropFirst(2)) : hex
         guard !cleaned.isEmpty else { return 0 }
-        // Use Decimal for large hex values
         var result = Decimal(0)
         let base = Decimal(16)
         for char in cleaned {
@@ -37,6 +38,13 @@ struct Token: Identifiable, Hashable, Sendable {
         let balance = result / divisor
         return NSDecimalNumber(decimal: balance).doubleValue
     }
+
+    private static func decimalStringToBalance(_ value: String, decimals: Int) -> Double {
+        guard let raw = Decimal(string: value) else { return 0 }
+        let divisor = pow(Decimal(10), decimals)
+        let balance = raw / divisor
+        return NSDecimalNumber(decimal: balance).doubleValue
+    }
 }
 
 extension Token {
@@ -45,11 +53,12 @@ extension Token {
         self.id = "\(entry.network)-\(entry.tokenAddress ?? "native")"
         self.network = entry.network
         self.tokenAddress = entry.tokenAddress ?? "native"
+        let isSolana = entry.network == "solana-mainnet"
         self.name = entry.tokenMetadata?.name.flatMap { $0.isEmpty ? nil : $0 }
-            ?? (isNative ? "Ethereum" : "Unknown Token")
+            ?? (isNative ? (isSolana ? "Solana" : "Ethereum") : "Unknown Token")
         self.symbol = entry.tokenMetadata?.symbol.flatMap { $0.isEmpty ? nil : $0 }
-            ?? (isNative ? "ETH" : "???")
-        self.decimals = entry.tokenMetadata?.decimals ?? 18
+            ?? (isNative ? (isSolana ? "SOL" : "ETH") : "???")
+        self.decimals = entry.tokenMetadata?.decimals ?? (isSolana ? 9 : 18)
         self.rawBalance = entry.tokenBalance
         self.logoURL = entry.tokenMetadata?.logo.flatMap { URL(string: $0) }
     }
@@ -84,6 +93,26 @@ extension Token {
             decimals: 18,
             rawBalance: "0x2B5E3AF16B1880000",
             logoURL: URL(string: "https://static.alchemyapi.io/images/assets/7083.png")
+        ),
+        Token(
+            id: "solana-mainnet-native",
+            network: "solana-mainnet",
+            tokenAddress: "native",
+            name: "Solana",
+            symbol: "SOL",
+            decimals: 9,
+            rawBalance: "1500000000",
+            logoURL: URL(string: "https://static.alchemyapi.io/images/assets/5426.png")
+        ),
+        Token(
+            id: "solana-mainnet-EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            network: "solana-mainnet",
+            tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            name: "USD Coin",
+            symbol: "USDC",
+            decimals: 6,
+            rawBalance: "5000000000",
+            logoURL: URL(string: "https://static.alchemyapi.io/images/assets/3408.png")
         ),
     ]
 }

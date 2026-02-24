@@ -14,9 +14,11 @@ final class WebSocketPriceService: PriceServiceProtocol, @unchecked Sendable {
         "arb-mainnet": 42161,
         "opt-mainnet": 10,
         "base-mainnet": 8453,
+        "solana-mainnet": 900,
     ]
 
     private static let zeroAddress = "0x0000000000000000000000000000000000000000"
+    private static let wrappedSOLMint = "So11111111111111111111111111111111"
 
     init(session: URLSession = .shared) {
         self.session = session
@@ -78,14 +80,20 @@ final class WebSocketPriceService: PriceServiceProtocol, @unchecked Sendable {
 
     // MARK: - Private
 
+    private func wsAddress(for token: Token) -> String {
+        let isSolana = token.network == "solana-mainnet"
+        if token.tokenAddress == "native" {
+            return isSolana ? Self.wrappedSOLMint : Self.zeroAddress
+        }
+        return isSolana ? token.tokenAddress : token.tokenAddress.lowercased()
+    }
+
     private func buildTokenLookup(_ tokens: [Token]) -> [PriceAssetIdentifier: String] {
         var lookup: [PriceAssetIdentifier: String] = [:]
         for token in tokens {
             let chainId = Self.chainIdMap[token.network] ?? 1
-            let wsAddress = token.tokenAddress == "native"
-                ? Self.zeroAddress
-                : token.tokenAddress.lowercased()
-            let identifier = PriceAssetIdentifier(chainId: chainId, address: wsAddress)
+            let address = wsAddress(for: token)
+            let identifier = PriceAssetIdentifier(chainId: chainId, address: address)
             lookup[identifier] = token.id
         }
         return lookup
@@ -95,11 +103,9 @@ final class WebSocketPriceService: PriceServiceProtocol, @unchecked Sendable {
         let encoder = JSONEncoder()
         for token in tokens {
             let chainId = Self.chainIdMap[token.network] ?? 1
-            let wsAddress = token.tokenAddress == "native"
-                ? Self.zeroAddress
-                : token.tokenAddress.lowercased()
+            let address = wsAddress(for: token)
             let message = PriceSubscribeMessage(
-                assetIdentifier: PriceAssetIdentifier(chainId: chainId, address: wsAddress)
+                assetIdentifier: PriceAssetIdentifier(chainId: chainId, address: address)
             )
             let data = try encoder.encode(message)
             let jsonString = String(data: data, encoding: .utf8) ?? "<failed to encode>"
@@ -145,9 +151,10 @@ final class WebSocketPriceService: PriceServiceProtocol, @unchecked Sendable {
                 continue
             }
 
+            let isSolanaChain = update.assetIdentifier.chainId == Self.chainIdMap["solana-mainnet"]
             let lookupKey = PriceAssetIdentifier(
                 chainId: update.assetIdentifier.chainId,
-                address: update.assetIdentifier.address.lowercased()
+                address: isSolanaChain ? update.assetIdentifier.address : update.assetIdentifier.address.lowercased()
             )
             logger.info("Decoded price update: chainId=\(lookupKey.chainId), address=\(lookupKey.address), raw=\(update.price.raw), usdValue=\(update.price.usdValue)")
 
